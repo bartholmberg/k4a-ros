@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 2.8.3)
-
+message(WARNING  "5 start of make in catkin//src//k4a-ros: " )
 # Project name and the type of project
 PROJECT(k4a-ros)
-message(STATUS "Executig CMakeLists of project  ${PROJECT_NAME}.")
+message(STATUS "Executing CMakeLists of project  ${PROJECT_NAME}.")
 
 # DEBUG/RELEASE
 IF (NOT CMAKE_BUILD_TYPE)
@@ -45,9 +45,10 @@ find_package(
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 #add_compile_options(-std=c++11)
-
+message(STATUS "6  PCL include dir: ${PCL_INCLUDE_DIRS}")
 find_package(PCL REQUIRED COMPONENTS)
 include_directories(${PCL_INCLUDE_DIRS})
+
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 
@@ -58,11 +59,12 @@ add_definitions(${OpenCV_DEFINITIONS})
 
 include_directories(include)
 
-
+message(STATUS "6.5 catkin include: ${catkin_INCLUDE_DIRS}")
 
 # add other necessary include directories
 include_directories(
 	src/
+    "C:/Program Files/Azure Kinect SDK v1.4.1/sdk/include"
 	${catkin_INCLUDE_DIRS}
 	)
 

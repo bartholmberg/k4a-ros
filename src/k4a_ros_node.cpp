@@ -21,7 +21,7 @@
 #include <pcl/point_types.h>
 #include <pcl/io/pcd_io.h>
 #include <pcl/io/ply_io.h>
-#include <pcl/visualization/pcl_visualizer.h>
+//#include <pcl/visualization/pcl_visualizer.h>
 #include <pcl/common/transforms.h>
 #include <pcl/features/normal_3d.h>
 
@@ -296,28 +296,28 @@ int main(int argc, char **argv)
 {
 	//ROS
 	ros::init(argc, argv, "k4a_ros_node");
-	ros::NodeHandle n;
-	ros::Rate loop_rate(30);
+	ros::NodeHandle myNodeH;
+	ros::Rate loop_rate(5);
 
-	ros::Publisher pub_color 			= n.advertise<sensor_msgs::Image>("k4a/color/color", 10);
-	ros::Publisher pub_color_to_depth 	= n.advertise<sensor_msgs::Image>("k4a/color/color_to_depth", 10);
+	ros::Publisher pub_color 			= myNodeH.advertise<sensor_msgs::Image>("k4a/color/color", 10);
+	ros::Publisher pub_color_to_depth 	= myNodeH.advertise<sensor_msgs::Image>("k4a/color/color_to_depth", 10);
 
-	ros::Publisher pub_depth 			= n.advertise<sensor_msgs::Image>("k4a/depth/depth", 10);
-	ros::Publisher pub_depth_to_color 	= n.advertise<sensor_msgs::Image>("k4a/depth/depth_to_color", 10);
+	ros::Publisher pub_depth 			= myNodeH.advertise<sensor_msgs::Image>("k4a/depth/depth", 10);
+	ros::Publisher pub_depth_to_color 	= myNodeH.advertise<sensor_msgs::Image>("k4a/depth/depth_to_color", 10);
 
-	ros::Publisher pub_depth_colorized			= n.advertise<sensor_msgs::Image>("k4a/depth/depth_colorized", 10);
-	ros::Publisher pub_depth_to_color_colorized = n.advertise<sensor_msgs::Image>("k4a/depth/depth_to_color_colorized", 10);
+	ros::Publisher pub_depth_colorized			= myNodeH.advertise<sensor_msgs::Image>("k4a/depth/depth_colorized", 10);
+	ros::Publisher pub_depth_to_color_colorized = myNodeH.advertise<sensor_msgs::Image>("k4a/depth/depth_to_color_colorized", 10);
 
-	ros::Publisher pub_point_cloud_depth_to_color = n.advertise<sensor_msgs::PointCloud2>("k4a/point_cloud/point_cloud_depth_to_color", 10);
-	ros::Publisher pub_point_cloud_depth_to_depth = n.advertise<sensor_msgs::PointCloud2>("k4a/point_cloud/point_cloud_depth_to_depth", 10);
-	ros::Publisher pub_point_cloud_color_to_depth = n.advertise<sensor_msgs::PointCloud2>("k4a/point_cloud/point_cloud_color_to_depth", 10);
+	//ros::Publisher pub_point_cloud_depth_to_color = n.advertise<sensor_msgs::PointCloud2>("k4a/point_cloud/point_cloud_depth_to_color", 10);
+	ros::Publisher pub_point_cloud_depth_to_depth = myNodeH.advertise<sensor_msgs::PointCloud2>("k4a/point_cloud/point_cloud_depth_to_depth", 10);
+	//ros::Publisher pub_point_cloud_color_to_depth = n.advertise<sensor_msgs::PointCloud2>("k4a/point_cloud/point_cloud_color_to_depth", 10);
 
-	ros::Publisher pub_ir_image = n.advertise<sensor_msgs::Image>("k4a/ir_image", 10);
+	ros::Publisher pub_ir_image = myNodeH.advertise<sensor_msgs::Image>("k4a/ir_image", 10);
 
 	//Kinect 4 Azure related initial parameters
 	int returnCode = 1;
 	k4a_device_t device = NULL;
-	const int32_t TIMEOUT_IN_MS = 1000;
+	const int32_t TIMEOUT_IN_MS = 10000;
 	k4a_transformation_t transformation = NULL;
 	k4a_transformation_t transformation_color_downscaled = NULL;
 	k4a_capture_t capture = NULL;
@@ -330,11 +330,12 @@ int main(int argc, char **argv)
 
 	int point_count = 0;
 	k4a_device_configuration_t config = K4A_DEVICE_CONFIG_INIT_DISABLE_ALL;
-	config.camera_fps = K4A_FRAMES_PER_SECOND_30;
+	config.camera_fps = K4A_FRAMES_PER_SECOND_5;
 	config.depth_mode = K4A_DEPTH_MODE_NFOV_UNBINNED;
-	config.color_format = K4A_IMAGE_FORMAT_COLOR_BGRA32;
+	//config.color_format = K4A_IMAGE_FORMAT_COLOR_BGRA32;
+    config.color_format = K4A_IMAGE_FORMAT_COLOR_NV12; 
 	config.color_resolution = K4A_COLOR_RESOLUTION_720P;
-	config.synchronized_images_only = true;
+	config.synchronized_images_only = false;
 	//Kinect 4 Azure related initial parameters
 
 	// START CONNECT TO "Kinect 4 Azure"
@@ -411,6 +412,7 @@ int main(int argc, char **argv)
 		if( Get_CV_Mat_CV16UC1(depth_image, cv_depth_image_CV16UC1) )
 		{
 			imshow("cv_depth_image CV_16UC1", cv_depth_image_CV16UC1);
+            cout << "depth format cv_16uc1: " << endl;
 			sensor_msgs::ImagePtr msg;
 			header.frame_id = "/k4a/depth_sensor";
 			msg = cv_bridge::CvImage(header, "16UC1", cv_depth_image_CV16UC1).toImageMsg();
@@ -420,14 +422,17 @@ int main(int argc, char **argv)
 		cv::Mat cv_depth_image_CV8UC1;
 		if( Get_CV_Mat_CV8UC1(depth_image, cv_depth_image_CV8UC1) )
 		{
+            cout << "depth format CV_8UC1: " << endl;
 			imshow("cv_depth_image CV_8UC1", cv_depth_image_CV8UC1);
 		}
 
 		// Publish BGRA8 encoding Colorize Depth Image under depth sensor frame
 		std::vector<Pixel> ColorizedDepthBuffer;
 		if( ColorizeDepthImage(depth_image, DepthPixelColorizer::ColorizeBlueToRed,
+
 			GetDepthModeRange(config.depth_mode), &ColorizedDepthBuffer) )
 		{
+            cout << "colorized depth image " << endl;
 			cv::Mat cv_ColorizedDepth_CV8UC4;
 			cv_ColorizedDepth_CV8UC4 = cv::Mat(k4a_image_get_height_pixels(depth_image),
 				k4a_image_get_width_pixels(depth_image), CV_8UC4, ColorizedDepthBuffer.data());
@@ -445,6 +450,7 @@ int main(int argc, char **argv)
 			toROSMsg(cloud_depth_to_depth, cloud_msg);
 			cloud_msg.header = header;
 			cloud_msg.header.frame_id = "/k4a/depth_sensor";
+            cout << "point cloud xyz h,w, data: " << cloud_msg.height << cloud_msg.width<< cloud_msg.data[120] << endl;
 			pub_point_cloud_depth_to_depth.publish(cloud_msg);
 		}
 
@@ -452,6 +458,7 @@ int main(int argc, char **argv)
 
 		// Publish BGR8 encoding color image under color sensor frame
 		// Get a color image pointer
+        #if def 0
 		color_image = k4a_capture_get_color_image(capture);
 		if (color_image == 0)
 		{
@@ -647,7 +654,7 @@ int main(int argc, char **argv)
 			msg = cv_bridge::CvImage(header, "16UC1", cv_ir_image_CV16UC1).toImageMsg();
 			pub_ir_image.publish(msg);
 		}
-
+        #endif 
 		cv::waitKey(10);
 		// ************************************************ Release Resources ************************************************ //
 		// release images
