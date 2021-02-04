@@ -22,6 +22,7 @@
 #include <pcl/io/pcd_io.h>
 #include <pcl/io/ply_io.h>
 //#include <pcl/visualization/pcl_visualizer.h>
+#include <visualization_msgs/Marker.h>
 #include <pcl/common/transforms.h>
 #include <pcl/features/normal_3d.h>
 
@@ -310,11 +311,14 @@ int main(int argc, char **argv)
 
 	//ros::Publisher pub_point_cloud_depth_to_color = n.advertise<sensor_msgs::PointCloud2>("k4a/point_cloud/point_cloud_depth_to_color", 10);
 	ros::Publisher pub_point_cloud_depth_to_depth = myNodeH.advertise<sensor_msgs::PointCloud2>("k4a/point_cloud/point_cloud_depth_to_depth", 10);
+    ros::Publisher marker_pub = myNodeH.advertise<visualization_msgs::Marker>("k4a/visualization_marker", 10);
+    uint32_t shape = visualization_msgs::Marker::CUBE;
 	//ros::Publisher pub_point_cloud_color_to_depth = n.advertise<sensor_msgs::PointCloud2>("k4a/point_cloud/point_cloud_color_to_depth", 10);
 
-	ros::Publisher pub_ir_image = myNodeH.advertise<sensor_msgs::Image>("k4a/ir_image", 10);
+	//ros::Publisher pub_ir_image = myNodeH.advertise<sensor_msgs::Image>("k4a/ir_image", 10);
 
 	//Kinect 4 Azure related initial parameters
+
 	int returnCode = 1;
 	k4a_device_t device = NULL;
 	const int32_t TIMEOUT_IN_MS = 10000;
@@ -378,6 +382,70 @@ int main(int argc, char **argv)
 	// START RECEIVE DATA AND PROCESS DATA FRAMES
 	while(ros::ok())
 	{
+        
+        
+    visualization_msgs::Marker marker;
+      // Set the frame ID and timestamp.  See the TF tutorials for information on these.
+    marker.header.frame_id = "k4a/depth_sensor";
+    marker.header.stamp = ros::Time::now();
+  
+      // Set the namespace and id for this marker.  This serves to create a unique ID
+      // Any marker sent with the same namespace and id will overwrite the old one
+    marker.ns = "basic_shapes";
+    marker.id = 0;
+   
+       // Set the marker type.  Initially this is CUBE, and cycles between that and SPHERE, ARROW, and CYLINDER
+    marker.type = shape;
+   
+      // Set the marker action.  Options are ADD, DELETE, and new in ROS Indigo: 3 (DELETEALL)
+    marker.action = visualization_msgs::Marker::ADD;
+   
+       // Set the pose of the marker.  This is a full 6DOF pose relative to the frame/time specified in the header
+    marker.pose.position.x = 0;
+    marker.pose.position.y = 0;
+    marker.pose.position.z = 0;
+    marker.pose.orientation.x = 0.0;
+    marker.pose.orientation.y = 0.0;
+    marker.pose.orientation.z = 0.0;
+    marker.pose.orientation.w = 1.0;
+  
+       // Set the scale of the marker -- 1x1x1 here means 1m on a side
+    marker.scale.x = 1.0;
+    marker.scale.y = 1.0;
+    marker.scale.z = 1.0;
+  
+       // Set the color -- be sure to set alpha to something non-zero!
+    marker.color.r = 0.0f;
+    marker.color.g = 1.0f;
+    marker.color.b = 0.0f;
+    marker.color.a = 1.0;
+   
+    marker.lifetime = ros::Duration();
+    while (marker_pub.getNumSubscribers() < 1)
+        {
+        if (!ros::ok())
+         {
+           return 0;
+         }
+        // ROS_WARN_ONCE("Please create a subscriber to the marker");
+         Sleep(1);
+        }
+    marker_pub.publish(marker);
+    switch (shape)
+    {
+    case visualization_msgs::Marker::CUBE:
+        shape = visualization_msgs::Marker::SPHERE;
+        break;
+    case visualization_msgs::Marker::SPHERE:
+        shape = visualization_msgs::Marker::ARROW;
+        break;
+    case visualization_msgs::Marker::ARROW:
+        shape = visualization_msgs::Marker::CYLINDER;
+        break;
+    case visualization_msgs::Marker::CYLINDER:
+        shape = visualization_msgs::Marker::CUBE;
+        break;
+    }
 		// Get a capture
 		switch (k4a_device_get_capture(device, &capture, TIMEOUT_IN_MS))
 		{
@@ -414,7 +482,7 @@ int main(int argc, char **argv)
 			imshow("cv_depth_image CV_16UC1", cv_depth_image_CV16UC1);
             cout << "depth format cv_16uc1: " << endl;
 			sensor_msgs::ImagePtr msg;
-			header.frame_id = "/k4a/depth_sensor";
+			header.frame_id = "k4a/depth_sensor";
 			msg = cv_bridge::CvImage(header, "16UC1", cv_depth_image_CV16UC1).toImageMsg();
 			pub_depth.publish(msg);
 		}
@@ -449,7 +517,7 @@ int main(int argc, char **argv)
 			sensor_msgs::PointCloud2 cloud_msg;
 			toROSMsg(cloud_depth_to_depth, cloud_msg);
 			cloud_msg.header = header;
-			cloud_msg.header.frame_id = "/k4a/depth_sensor";
+			cloud_msg.header.frame_id = "k4a/depth_sensor";
             cout << "point cloud xyz h,w, data: " << cloud_msg.height << cloud_msg.width<< cloud_msg.data[120] << endl;
 			pub_point_cloud_depth_to_depth.publish(cloud_msg);
 		}
@@ -683,7 +751,7 @@ int main(int argc, char **argv)
 
 		loop_rate.sleep();
 	}
-
+    
 	if (xy_table != NULL)
 		k4a_image_release(xy_table);
 	xy_table = NULL;
