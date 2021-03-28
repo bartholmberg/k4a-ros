@@ -49,7 +49,7 @@ message(STATUS "6  PCL include dir: ${PCL_INCLUDE_DIRS}")
 find_package(PCL REQUIRED COMPONENTS)
 include_directories(${PCL_INCLUDE_DIRS})
 
-link_directories(${PCL_LIBRARY_DIRS})
+link_directories(${PCL_LIBRARY_DIRS} "C:/Program Files/Azure Kinect SDK v1.4.1/sdk/windows-desktop/amd64/release/lib")
 add_definitions(${PCL_DEFINITIONS})
 
 find_package(OpenCV REQUIRED)
@@ -98,7 +98,7 @@ catkin_package(
 #Build executable
 add_executable(k4a_ros_node src/k4a_ros_node.cpp src/libs/StaticImageProperties.cpp)
 add_dependencies(k4a_ros_node ${PROJECT_NAME}_EXPORTED_TARGETS)
-target_link_libraries(k4a_ros_node ${PCL_LIBRARIES} ${OpenCV_LIBRARIES} ${catkin_LIBRARIES} k4a)
+target_link_libraries(k4a_ros_node ${PCL_LIBRARIES} ${OpenCV_LIBRARIES} ${catkin_LIBRARIES} k4a )
 
 
 #Build examples

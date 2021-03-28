@@ -1,3 +1,11 @@
+## BAH, 3/28/2021 build notes
+
+## k4a ROS driver
+##*****needed to collect a bag***** 
+## use the make **without --install** to get k4a-ros working
+catkin_make_isolated   --use-ninja
+
+
 ### Overview
 This repository holds code of a [ROS](http://www.ros.org) package for data acquisition(color image, depth map and point cloud) with  [Kinect 4 Azure(https://azure.microsoft.com/en-us/services/kinect-dk/). It is basically a ROS wrapper of the low-level API provided by [Microsoft/Azure-Kinect-Sensor-SDK](https://microsoft.github.io/Azure-Kinect-Sensor-SDK/master/index.html), the manufacturer of the camera.
 
